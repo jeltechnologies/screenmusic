@@ -15,17 +15,19 @@ public class TitleTag extends BaseTag {
 	if (folder != null && !folder.isBlank()) {
 	    title = folder;
 	} else {
-	    String id  = getRequestParameter("id");
+	    String id = getRequestParameter("id");
 	    Book book = null;
 	    User user = getUser();
-	    ScreenMusicContext context = new ScreenMusicContext(this.getPageContext().getServletContext());
-	    Library library = new Library(user, context);
-	    if (id != null && !id.isBlank()) {
-		book = library.getBook(id);
-	    } else {
-		String file = getRequestParameter("file");
-		if (file != null && !file.isBlank()) {
-		    book = library.getBookByFileName(file);
+	    if (user != null) {
+		ScreenMusicContext context = new ScreenMusicContext(this.getPageContext().getServletContext());
+		Library library = new Library(user, context);
+		if (id != null && !id.isBlank()) {
+		    book = library.getBook(id);
+		} else {
+		    String file = getRequestParameter("file");
+		    if (file != null && !file.isBlank()) {
+			book = library.getBookByFileName(file);
+		    }
 		}
 	    }
 	    if (book == null) {
@@ -35,7 +37,7 @@ public class TitleTag extends BaseTag {
 	    }
 	}
 	title = title + "Screen Music";
-	String titlEncoded= StringUtils.encodeHtml(title);
+	String titlEncoded = StringUtils.encodeHtml(title);
 	add("<title>" + titlEncoded + "</title>");
     }
 }
