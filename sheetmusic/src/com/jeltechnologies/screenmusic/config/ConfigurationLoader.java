@@ -62,7 +62,8 @@ public class ConfigurationLoader {
 
     private void createFolderIfNotExists(String folderName) {
 	Path folder = Path.of(folderName);
-	if (!Files.exists(folder)) {
+	LOGGER.info(folderName + " is directory: " + Files.isDirectory(folder));
+	if (!Files.isDirectory(folder)) {
 	    try {
 		Files.createDirectories(folder);
 	    } catch (IOException e) {

@@ -17,7 +17,7 @@ import com.jeltechnologies.screenmusic.config.Admin;
 
 public abstract class Database {
     private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
-    private static final String DATASOURCE_NAME = "java:/comp/env/jdbc/sheetmusic";
+    private static final String DATASOURCE_NAME = "java:/comp/env/jdbc/screenmusic";
     private Connection connection;
     
     private Map<String, PreparedStatement> usedPreparedStatements = new HashMap<String, PreparedStatement>();

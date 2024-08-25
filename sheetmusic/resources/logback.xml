@@ -20,11 +20,11 @@
 		<appender-ref ref="CONSOLE" />
 	</logger> 
 	
-	<logger name="com.jeltechnologies.screenmusic.opticalmusicrecognition.Consumer" level="info" additivity="false">
+	<logger name="com.jeltechnologies.screenmusic.opticalmusicrecognition.Consumer" level="debug" additivity="false">
 		<appender-ref ref="CONSOLE" />
 	</logger> 
 	
-	<logger name="com.jeltechnologies.screenmusic.booksview.BooksInViewSessionBean" level="info" additivity="false">
+	<logger name="com.jeltechnologies.utils.OperatingSystemCommand" level="debug" additivity="false">
 		<appender-ref ref="CONSOLE" />
 	</logger> 
 	

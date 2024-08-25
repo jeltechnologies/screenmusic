@@ -7,6 +7,9 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -17,6 +20,7 @@ import com.jeltechnologies.screenmusic.User;
 import com.jeltechnologies.screenmusic.config.AudiverisConfiguration;
 import com.jeltechnologies.screenmusic.config.AudiverisDefaultOptions;
 import com.jeltechnologies.screenmusic.config.AudiverisOption;
+import com.jeltechnologies.screenmusic.config.Configuration;
 import com.jeltechnologies.screenmusic.library.Library;
 import com.jeltechnologies.screenmusic.pdf.PdfExtractor;
 import com.jeltechnologies.screenmusic.servlet.ScreenMusicContext;
@@ -40,14 +44,14 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 
     private volatile boolean consuming = false;
 
-    private AudiverisSteps steps = new AudiverisSteps();
-    
+    private AudiverisSteps steps;
+
     private final User user;
-    
+
     private final AudiverisConfiguration config;
-    
+
     private final ScreenMusicContext context;
-    
+
     private final static AudiverisDefaultOptions AUDIVERIS_DEFAULT_OPTIONS = new AudiverisDefaultOptions();
 
     public Consumer(User user, ScreenMusicContext context, AudiverisConfiguration config, JobQueue queue, int threadNumber) {
@@ -76,6 +80,7 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 		if (job != null && !job.isCanceled()) {
 		    status = "Processing file:" + job.getInputFile() + ", id: " + job.getId();
 		    consuming = true;
+		    steps = new AudiverisSteps(job.getPages());
 		    consumeJob();
 		}
 	    } catch (InterruptedException e) {
@@ -96,6 +101,7 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 
     private void consumeJob() throws InterruptedException, IOException {
 	job.setStatus(JobStatus.PROCESSING);
+	steps.getStep("EXPORT_PDF");
 	File extractedPages = extractPagesFromPdf();
 	if (extractedPages != null) {
 	    doOpticalRecognition(extractedPages);
@@ -105,6 +111,7 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
     }
 
     private File extractPagesFromPdf() {
+	LOGGER.info("User: " + user);
 	File extractedPagesFile = null;
 	try {
 	    String outFileName = job.getId();
@@ -120,12 +127,15 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
     }
 
     private void doOpticalRecognition(File extractedPages) throws IOException, InterruptedException, FileNotFoundException {
+	if (LOGGER.isDebugEnabled()) {
+	    LOGGER.debug("extractedPage: " + extractedPages.getAbsolutePath());
+	}
 	job.setInputFile(extractedPages);
 	File outputFolder = Files.createTempDirectory("sheetmusic-audiveris-" + job.getId()).toFile();
 	job.setOutputFolder(outputFolder);
 	doAudiveris(outputFolder);
 	File downloadFile = createDownloadFile(outputFolder);
-	extractedPages.delete();
+	//extractedPages.delete();
 	if (downloadFile == null) {
 	    job.setStatus(JobStatus.ERROR);
 	    job.setStep("");
@@ -171,7 +181,10 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 	    fos.close();
 	} else {
 	    if (outputFiles.length == 1) {
-		outputFile = outputFiles[0];
+		File mxlFile =  outputFiles[0];
+		File renamed = new File(outputFileName + ".mxl");
+		mxlFile.renameTo(renamed);
+		outputFile = renamed;
 		if (LOGGER.isDebugEnabled()) {
 		    LOGGER.debug("OutputFile: " + outputFile);
 		}
@@ -192,7 +205,7 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 	    throw new IOException("Cannot start Audiveris because JAVA_HOME is not set");
 	}
 	String javaExe = javaHome + "/bin/java";
-	
+
 	boolean onWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 	if (onWindows) {
 	    javaExe += ".exe";
@@ -201,7 +214,7 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 
 	OperatingSystemCommand command = new OperatingSystemCommand(exe);
 
-	File audiverisLibFolder = new File(config.audiveris_lib());
+	File audiverisLibFolder = new File(config.getAudiveris_lib());
 	if (!audiverisLibFolder.isDirectory()) {
 	    throw new IOException("Cannot start Audiveris because audiverusLibFolder cannot be found or is not a folder. Check the YAML configuration");
 	}
@@ -209,8 +222,8 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 	command.addArgument("-cp");
 	command.addArgument("*");
 	command.addArgument("Audiveris");
-
 	command.addArgument("-batch");
+	command.addArgument("-transcribe");
 	command.addArgument("-export");
 	command.addArgument("-save");
 	command.addArgument("-output");
@@ -219,24 +232,46 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 
 	addOptions(command);
 
-	command.setEnvironmentVariable("TESSDATA_PREFIX", config.tessdata_prefix());
-
+	command.setEnvironmentVariable("TESSDATA_PREFIX", config.getTessdata_prefix());
 	command.addListener(this);
+
 	command.execute();
     }
 
     private void addOptions(OperatingSystemCommand command) {
-	for (AudiverisOption option : job.getJobData().getOptions()) {
-	    if (verifyOption(option.name())) {
-		command.addArgument("-option");
-		command.addArgument(option.name() + "=" + option.value());
+	Map<String, String> map = new HashMap<String, String>();
+	List<AudiverisOption> defaults = Configuration.getInstance().opticalmusicrecognition().audiveris().getDefaultOptions();
+	for (AudiverisOption option : defaults) {
+	    map.put(option.name(), option.value());
+	}
+	List<AudiverisOption> jobOptions = job.getJobData().getOptions();
+	for (AudiverisOption option : jobOptions) {
+	    map.put(option.name(), option.value());
+	}
+	if (!map.isEmpty()) {
+	    if (LOGGER.isDebugEnabled()) {
+		LOGGER.debug("Audiveris CLI options");
+		LOGGER.debug("======================");
 	    }
-	    else {
-		LOGGER.warn("Option not found in Audiveris: " + option.name());
+	    for (String name : map.keySet()) {
+		if (verifyOption(name)) {
+		    String value = map.get(name);
+		    String cliOption = name + "=" + value;
+		    if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("  -option " + cliOption);
+		    }
+		    command.addArgument("-option");
+		    command.addArgument(cliOption);
+		} else {
+		    LOGGER.warn("Option not found in Audiveris: " + name);
+		}
+	    }
+	    if (LOGGER.isDebugEnabled()) {
+		LOGGER.debug("======================");
 	    }
 	}
     }
-    
+
     private boolean verifyOption(String name) {
 	AudiverisOption option = AUDIVERIS_DEFAULT_OPTIONS.getOption(name);
 	return option != null;
@@ -255,7 +290,11 @@ public class Consumer implements Runnable, ConsumerMBean, OperatingSystemCommand
 	if (afterPipe != null && !afterPipe.equals("")) {
 	    String step = steps.getStep(afterPipe);
 	    if (step != null && !step.isEmpty()) {
-		job.setStep(step);
+		int percentage = steps.getPercentageCompleted();
+		if (LOGGER.isDebugEnabled()) {
+		    LOGGER.debug(percentage + "% completed");
+		}
+		job.setPercentageCompleted(percentage);
 	    }
 	}
     }

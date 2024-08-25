@@ -40,6 +40,7 @@ public class PdfExtractor {
 	File outFile = null;
 	try {
 	    File inFile = user.getFile(book.getRelativeFileName());
+	    LOGGER.info("Opening [" + inFile.getAbsolutePath() + "]");
 	    pdDocument = PdfManager.openPdf(inFile);
 	    List<BufferedImage> images = new ArrayList<BufferedImage>();
 	    for (int i = startPage - 1; i < endPage; i++) {

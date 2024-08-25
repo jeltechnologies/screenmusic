@@ -36,12 +36,16 @@ public class DownloadMusicXMLServlet extends BaseServlet {
 	}
 	jobData.setUserName(user.name());
 	storeUserPreferences(jobData);
-	Book book = new Library(user, new ScreenMusicContext(request)).getBookWithFileName(jobData.getBookId());
+	ScreenMusicContext context = new ScreenMusicContext(request);
+	Library library = new Library(user, context);
+	Book book = library.getBookWithFileName(jobData.getBookId());
 	if (book == null) {
 	    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 	} else {
 	    jobData.setBook(book);
 	    Job job = new Job(jobData);
+	    String label = library.getPageLabel(job.getBook(), job.getFrom(), job.getTo());
+	    jobData.setLabel(label);
 	    JobList.getInstance().add(job);
 	    JobQueue.getInstance().add(job);
 	    respondText(response, job.getId());

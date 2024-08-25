@@ -12,6 +12,7 @@ public class Job implements Serializable {
     private static final long serialVersionUID = 3793990943547388929L;
     private JobStatus status = JobStatus.QUEUED;
     private final String id;
+   
     private final LocalDateTime startTime = LocalDateTime.now();
     @JsonIgnore
     private File inputFile;
@@ -22,6 +23,7 @@ public class Job implements Serializable {
     private final JobData jobData;
     private volatile boolean canceled = false;
     private String step = "";
+    private int percentageCompleted = 0;
     
     public Job(JobData jobData) {
 	this.jobData = jobData;
@@ -34,6 +36,14 @@ public class Job implements Serializable {
     
     public JobData getJobData() {
         return jobData;
+    }
+
+    public int getPercentageCompleted() {
+        return percentageCompleted;
+    }
+
+    public void setPercentageCompleted(int percentageCompleted) {
+        this.percentageCompleted = percentageCompleted;
     }
 
     public boolean isCanceled() {
@@ -76,8 +86,13 @@ public class Job implements Serializable {
         this.status = status;
     }
     
+    @JsonIgnore
     public Book getBook() {
         return jobData.getBook();
+    }
+    
+    public String getLabel() {
+	return jobData.getLabel();
     }
     
     public File getOutputFile() {
@@ -98,6 +113,10 @@ public class Job implements Serializable {
 
     public int getTo() {
         return jobData.getTo();
+    }
+    
+    public int getPages() {
+	return jobData.getPages();
     }
 
     public void setInputFile(File inputFile) {

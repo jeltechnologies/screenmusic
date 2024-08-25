@@ -17,6 +17,6 @@ public class OcrLanguagesServlet extends BaseServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	AudiverisConfiguration config = Configuration.getInstance().opticalmusicrecognition().audiveris();
-	respondJson(response, config.languages());
+	respondJson(response, config.getLanguages());
     }
 }

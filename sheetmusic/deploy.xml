@@ -11,6 +11,6 @@
 	</target>
 	
 	<target name="deploy" depends="mvn">
-		<copy file="${build}/${webapp-name}-${version}.war" tofile="\\192.168.1.5\screenmusic-webapps\ROOT.war" />
+		<copy file="${build}/${webapp-name}-${version}.war" tofile="\\192.168.1.5\tomcat\webapps\${webapp-name}.war" />
 	</target>
 </project>

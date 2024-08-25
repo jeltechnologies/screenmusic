@@ -6,8 +6,8 @@ public record StorageConfiguration(String cache, String cacheExtracted, String c
 {
     public StorageConfiguration(String cache, String cacheExtracted, String cacheDeleted, String blackList, String temp) {
 	this.cache = cache;
-	this.cacheExtracted = getDefault(cacheExtracted, "img");
-	this.cacheDeleted = getDefault(cacheDeleted, "/_Recycled_");
+	this.cacheExtracted = getDefault(cacheExtracted, cache + "/img");
+	this.cacheDeleted = getDefault(cacheDeleted, cache + "/_Recycled_");
 	this.blackList = getDefault(blackList, cache + "/blacklisted_pdfs.txt");
 	String defaultTemp = System.getProperty("java.io.tmpdir") + "/" + "sheetmusic-tmp/";
 	this.temp = getDefault(temp, defaultTemp);
@@ -39,21 +39,21 @@ public record StorageConfiguration(String cache, String cacheExtracted, String c
      * Folder inside the cache folder where extracted images and thumbnails are stored
      */
     public File getCacheFolderExtracted() {
-	return new File(cache + "/" + cacheExtracted);
+	return new File(cacheExtracted);
     }
 
     /**
      * Folder inside the cache folder where extracted images are stored into when PDF is removed
      */
     public File getCacheFolderDeleted() {
-	return new File(cache + "/"  + cacheDeleted());
+	return new File(cacheDeleted);
     }
 
     /**
      * Text file where all PDFs are stored that did not work for some reason, these files will be ignored
      */
     public File getBlackListFile() {
-	return new File(cache + "/" + blackList());
+	return new File(blackList());
     }
     
 }

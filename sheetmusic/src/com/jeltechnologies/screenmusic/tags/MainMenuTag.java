@@ -28,7 +28,7 @@ public class MainMenuTag extends BaseTag {
 	MENU_ITEMS.add(new NamedValue("Folders", "folders.jsp"));
 	MENU_ITEMS.add(new NamedValue("History", "history.jsp"));
 	MENU_ITEMS.add(new NamedValue("Stats", "statistics.jsp"));
-	IconTag icon = new IconTag("close");
+	IconTag icon = new IconTag("x");
 	icon.setOnclick("clearSearchText();");
 	CLEAR_SEARCH_ICON = icon.toString();
     }
@@ -72,7 +72,7 @@ public class MainMenuTag extends BaseTag {
 	}
 	
 	addLine("<div>");
-	add(new IconTag("user").toString());
+	add(new IconTag("person").toString());
 	
 	String userName = getUser().name();
 	StringBuilder link = new StringBuilder();

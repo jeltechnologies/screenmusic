@@ -42,7 +42,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.jeltechnologies</groupId>
-			<artifactId>icons</artifactId>
+			<artifactId>bootstrap-icons-taglibrary</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>

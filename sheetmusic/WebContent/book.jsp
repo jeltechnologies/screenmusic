@@ -45,14 +45,14 @@ if (artist == null || artist.isBlank()) {
 	<div id="sheetmusic-main-body">
 
 		<div class="headerWithTitle">
-			<icons:icon name="back" cssClass="clickButton" size="24" onclick="javascript: window.history.back();" />
+			<icons:icon name="arrow-left" cssClass="clickButton" onclick="javascript: window.history.back();" />
 			<span class="pageTitle"><%=headerLabel%></span> 
 			
 			<span style="margin-left: 16px"> 
 				<icons:icon id="favorites-yes" name="star-fill" cssClass="clickButton" onclick="favoritesBookClicked('yes');"/>
 				<icons:icon id="favorites-no" name="star" cssClass="clickButton" onclick="favoritesBookClicked('no');"/>
-				<icons:icon name="refresh" cssClass="clickButton" onclick="userClickedRefresh();" /> 
-				<icons:icon name="edit" cssClass="clickButton" onclick="editClicked();" /> 
+				<icons:icon name="arrow-clockwise" cssClass="clickButton" onclick="userClickedRefresh();" /> 
+				<icons:icon name="pencil-square" cssClass="clickButton" onclick="editClicked();" /> 
 				<icons:icon name="download" cssClass="clickButton" onclick="downloadClicked();" />
 			</span>
 		</div>

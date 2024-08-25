@@ -513,7 +513,7 @@ h3 {
 	width: 100%;
   	display: flex;
   	flex-wrap: nowrap;
-  	z-index: 11;
+  	z-index: 10;
 }
 
 #page-title-container > div {

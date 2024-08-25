@@ -38,12 +38,12 @@ public class ScreenMusicContextListener implements ServletContextListener {
     private static final String MBEAN_INDEX_SERVICE_TYPE = "Index Service";
     private static final String MBEAN_OMR_SERVICE_TYPE = "Optical Music Recognition Service";
     private static final Logger LOGGER = LoggerFactory.getLogger(ScreenMusicContextListener.class);
-    private static final String CONFIG_ENVIRONMENT_VARIABLE = "SHEETMUSIC_CONFIG";
+    private static final String CONFIG_ENVIRONMENT_VARIABLE = "SCREENMUSIC_CONFIG";
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
 	LOGGER.info("===============================================================================================================");
-	LOGGER.info("Sheet Music - Starting on " + System.getProperty("os.name"));
+	LOGGER.info("Screen Music - Starting on " + System.getProperty("os.name"));
 	System.setProperty("org.apache.pdfbox.rendering.UsePureJavaCMYKConversion", "true");
 	DBUsers dbUsers = null;
 	try {

@@ -1,6 +1,6 @@
 const POST_HISTORY_TIMER_SECONDS = 120;
-const CLOSE_MODAL_SECONDS = 10;
-const HIDE_NAVIGATION_SECONDS = 2;
+const CLOSE_MODAL_SECONDS = 15;
+const HIDE_NAVIGATION_SECONDS = 60;
 const POST_HISTORY_MS = POST_HISTORY_TIMER_SECONDS * 1000;
 const CLOSE_MODAL_MS = CLOSE_MODAL_SECONDS * 1000;
 const HIDE_NAVIGATION_MS = HIDE_NAVIGATION_SECONDS * 1000;
@@ -73,7 +73,7 @@ function initSwiper() {
 			slideTransitionSpeed = preferedTransition;
 		}
 	}
-	
+
 	swiper = new Swiper('#swiper', {
 		slidesPerView: slidesPerView,
 		initialSlide: (getRequestParameter("page") - 1),
@@ -193,7 +193,7 @@ function updateOrientation() {
 		setTimeout(() => {
 			updateSwiper();
 		}, 1000);
-		
+
 	} else {
 		updateSwiper();
 	}
@@ -293,9 +293,11 @@ function downloadClicked(type) {
 
 function addLanguageOptions(data) {
 	let languages = data;
-	for (let i = 0; i < languages.length; i++) {
-		let language = languages[i];
-		$('#ocr-languages').append(new Option(language.language, language.code));
+	if (languages != undefined) {
+		for (let i = 0; i < languages.length; i++) {
+			let language = languages[i];
+			$('#ocr-languages').append(new Option(language.language, language.code));
+		}
 	}
 	$('#downloadModal').modal();
 	modalShown = true;
@@ -581,15 +583,6 @@ function startMusicXMLJob(from, to) {
 	let instrument = $('#default-instrument').val();
 	options.push(getOption("org.audiveris.omr.score.LogicalPart.defaultSingleStaffPartName", instrument));
 
-	options.push(getOption("org.audiveris.omr.sheet.Profiles.defaultQuality", "Poor"));
-
-	//options.push(getOption("org.audiveris.omr.sheet.Scale.defaultBeamSpecification", 10));
-	//
-	//Synthetic,
-	/** The standard quality, small gaps allowed. */
-	//Standard,
-	/** The lowest quality, use a hierarchy of gap profiles. */
-	//Poor;
 
 	jobData.options = options;
 	postJson("download-musicxml", jobData, receiveJobId);
@@ -603,7 +596,7 @@ function getOption(name, value) {
 }
 
 function receiveJobId(data) {
-	exportMusicXMLJobId = data.responseText;
+	exportMusicXMLJobId = data;
 	console.log(exportMusicXMLJobId);
 	getJobStatus();
 	refreshExportMusicXMLStatus = setInterval(getJobStatus, 1000);
@@ -620,6 +613,24 @@ function receiveJobStatus(job) {
 }
 
 function updateStatus(job) {
+	let exporttitle = "Exporting music";
+	let completed = job.percentageCompleted;
+	$('#percentage-completed').html("<p>Completed: " + completed + "%</p>");
+	if (job.status === "Ready for download" || job.status === "Error") {
+		$('#percentage-completed').html("");
+		if (job.status === "Ready for download") {
+			$('#export-download-button').prop('disabled', false);
+			exporttitle = "Done";
+		} else {
+			exporttitle = "Sorry, this sheet could not be exported";
+		}
+		$('#export-continue-button').hide();
+		clearInterval(refreshExportMusicXMLStatus);
+	}
+	$('#export-title').html(exporttitle);
+}
+
+function updateStatusOld(job) {
 	$('#export-book-label').html(job.book.label);
 	let pages = "All pages";
 	let from = job.from;
@@ -636,6 +647,7 @@ function updateStatus(job) {
 
 	let status = job.status;
 	let step = job.step;
+	let completed = job.percentageCompleted;
 	if (step != undefined && step != "") {
 		status = status + " - " + step;
 	}

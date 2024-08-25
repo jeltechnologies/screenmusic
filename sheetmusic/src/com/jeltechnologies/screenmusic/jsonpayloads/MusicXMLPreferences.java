@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jeltechnologies.screenmusic.config.AudiverisConfiguration;
+import com.jeltechnologies.screenmusic.config.AudiverisDefaultOptions;
 import com.jeltechnologies.screenmusic.config.AudiverisOption;
 import com.jeltechnologies.screenmusic.config.Configuration;
 import com.jeltechnologies.screenmusic.config.OpticalMusicRecognizationConfiguration;
@@ -36,7 +37,7 @@ public class MusicXMLPreferences implements Serializable {
 	if (defaultConfig != null) {
 	    AudiverisConfiguration audiverisConfiguration = defaultConfig.audiveris();
 	    if (audiverisConfiguration != null) {
-		defaultOptions = Configuration.getInstance().opticalmusicrecognition().audiveris().default_options();
+		defaultOptions = new AudiverisDefaultOptions().getOptions();
 	    }
 	}
 	if (defaultOptions == null) {

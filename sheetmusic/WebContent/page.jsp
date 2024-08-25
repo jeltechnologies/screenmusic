@@ -27,7 +27,7 @@
 		</button>
 
 		<button title="Listen to these pages" onclick="downloadClicked('musicxml');">
-			<icons:icon name="listen" cssClass="button-icon" />
+			<icons:icon name="earbuds" cssClass="button-icon" />
 		</button>
 
 		<button title="Remove as favorite" id="favorites-yes" onclick="favoritesPageClicked('yes');">
@@ -43,7 +43,7 @@
 		</button>
 
 		<button title="Close" onclick="handleCloseAction();">
-			<icons:icon name="close" cssClass="button-icon" />
+			<icons:icon name="x" cssClass="button-icon" />
 		</button>
 	</div>
 
@@ -173,26 +173,9 @@
 
 	<div class="modal" id="exportWaitModal" style="display: none;">
 		<h3>
-			<span>Exporting to MusicXML...</span>
+			<span id="export-title"></span>
 		</h3>
-		<table class="modal-table">
-			<tr>
-				<td width="100px">Book</td>
-				<td><span id="export-book-label"></span></td>
-			</tr>
-			<tr>
-				<td>Pages</td>
-				<td><span id="export-book-pages"></span></td>
-			</tr>
-			<tr>
-				<td>Started</td>
-				<td><span id="export-book-started"></span></td>
-			</tr>
-			<tr>
-				<td>Status</td>
-				<td><span id="export-book-status"></span></td>
-			</tr>
-		</table>
+		<div id="percentage-completed"></div>
 		<div>
 			<button type="button" id="export-download-button" onclick="downloadExportResultClicked();" disabled>Download</button>
 			<button type="button" id="export-continue-button" onclick="closeModal();">Continue...</button>
