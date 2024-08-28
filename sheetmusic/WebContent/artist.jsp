@@ -13,7 +13,7 @@
 	<sheetmusic:main-menu selected="Artists" showSearch="true" />
 	<div id="sheetmusic-main-body">
 		<div class="headerWithTitle">
-			<icons:icon name="back" cssClass="clickButton" size="24" onclick="javascript: window.history.back();" /> 
+			<icons:icon name="chevron-left" cssClass="clickButton" size="24" onclick="javascript: window.history.back();" /> 
 			<span class="pageTitle" id="artist">Artist</span>
 			<span style="margin-left: 16px"> 
 				<icons:icon id="favorites-yes" name="star-fill" cssClass="clickButton" onclick="favoritesBookClicked('yes');"/>
