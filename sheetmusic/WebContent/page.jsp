@@ -10,6 +10,26 @@
 	<link rel="stylesheet" type="text/css" href="files/swiper-11.0.4/swiper-bundle.min.css" />
 	<script src="files/swiper-11.0.4/swiper-bundle.min.js"></script>
 	<script src="app/page.js"></script>
+
+<style>
+	.slidecontainer {
+  width: 100%; /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 100%; /* Full-width */
+  height: 25px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
+}
+
+</style>
 </head>
 
 <body>
@@ -83,7 +103,14 @@
 			<span id="download-table-title"></span>
 		</h3>
 		<p id="download-table-sub-title"></p>
-
+<!--		
+		<div id="download-wizard-page-1">
+			<h4>Test</h4>
+			<div class="slidecontainer">
+  				<input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+			</div>
+			
+		
 		<table id="download-wizard-page-1" class="selected-pages-table">
 			<tr>
 				<td class="selected-pages-cell">
@@ -107,6 +134,33 @@
 				</td>
 			</tr>
 		</table>
+-->
+		
+		<table id="download-wizard-page-1" class="selected-pages-table">
+			<tr>
+				<td class="selected-pages-cell">
+					<h4>Left page</h4>
+					<div id="download-pages-left" class="unselected-option" onclick="selectPagesClicked('left')">
+						<br> <img id="download-image-left" class="download-image">
+					</div>
+				</td>
+				<td class="selected-pages-cell">
+					<h4>Right page</h4>
+					<div id="download-pages-right" class="unselected-option" onclick="selectPagesClicked('right')">
+						<br> <img id="download-image-right" class="download-image">
+					</div>
+				</td>
+				<td class="selected-pages-cell">
+					<h4>Range</h4>
+					<div id="download-pages-pages" class="selected-option" onclick="selectPagesClicked('pages')">
+						<br>
+						<div id="download-image-pages"></div>
+					</div>
+				</td>
+			</tr>
+		</table>
+		
+		-->
 
 		<table id="download-wizard-page-2" style="display: none;">
 			<tr>

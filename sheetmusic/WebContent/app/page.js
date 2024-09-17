@@ -10,6 +10,7 @@ var currentPage = getRequestParameter("page");
 var book;
 var swiper;
 var slidesPerView;
+var currentSlide;
 var preferences;
 var downloadType;
 var downloadWizardStep;
@@ -33,6 +34,7 @@ $('#cheat-sheet-modal').on($.modal.BEFORE_CLOSE, function(event, modal) {
 function pagePageReady() {
 	console.log("pagePageReady");
 	let url = "users/preferences";
+	currentSlide = (getRequestParameter("page") - 1)
 	getJson(url, updateUserPreferences);
 }
 
@@ -74,9 +76,11 @@ function initSwiper() {
 		}
 	}
 
+	console.log("currentSlide:" + currentSlide);
 	swiper = new Swiper('#swiper', {
 		slidesPerView: slidesPerView,
-		initialSlide: (getRequestParameter("page") - 1),
+		slidesPerGroup: slidesPerView,
+		initialSlide: currentSlide,
 		spaceBetween: 0,
 		centeredSlides: false,
 		cssMode: false,
@@ -133,6 +137,8 @@ function loadImagesOnSlide() {
 }
 
 function swiperSlideChange() {
+	currentSlide = swiper.realIndex;
+	console.log(currentSlide);
 	loadImagesOnSlide();
 	updateFavoriteStatus();
 }
@@ -184,44 +190,47 @@ function updateBook(data) {
 }
 
 function updateOrientation() {
-	//alert("updateOrientation");
 	console.log("updateOrientation");
+	let oldSlidesPerview = slidesPerView;
 	slidesPerView = getSlidesPerView();
+	console.log("updateOrientation from " + oldSlidesPerview + " to " + slidesPerView);
 	if (swiper !== undefined && swiper !== null) {
-		swiper.destroy(true, true);
-		swiper = undefined;
-		setTimeout(() => {
-			updateSwiper();
-		}, 1000);
+			swiper.destroy(true, true);
+			swiper = undefined;
+			setTimeout(() => {
+				updateSwiper();
+			}, 200);
 
-	} else {
-		updateSwiper();
+		} else {
+			updateSwiper();
 	}
 	updatePageLabels();
 }
 
 function updatePageLabels() {
-	let pageNr = (swiper.realIndex + 1);
-	//console.log("updatePageLabels(" + pageNr + ")");
-	let html = "";
-	slidesPerView = getSlidesPerView();
-	for (let i = 0; i < slidesPerView; i++) {
-		let pageIndex = pageNr + i;
-		let title = getPageTitle(pageIndex);
-		html += "<div>";
-		if (title !== "") {
-			html += "<span class='page-title'>" + title + "</span>";
+	if (swiper == null && swiper != undefined) {
+		let pageNr = (swiper.realIndex + 1);
+		//console.log("updatePageLabels(" + pageNr + ")");
+		let html = "";
+		slidesPerView = getSlidesPerView();
+		for (let i = 0; i < slidesPerView; i++) {
+			let pageIndex = pageNr + i;
+			let title = getPageTitle(pageIndex);
+			html += "<div>";
+			if (title !== "") {
+				html += "<span class='page-title'>" + title + "</span>";
+			}
+			html += "</div>";
 		}
-		html += "</div>";
-	}
-	//console.log("page container: " + html);
-	$("#page-title-container").html(html);
+		//console.log("page container: " + html);
+		$("#page-title-container").html(html);
 
-	if (closePageTitlesTimer != undefined) {
-		clearTimeout(closePageTitlesTimer);
+		if (closePageTitlesTimer != undefined) {
+			clearTimeout(closePageTitlesTimer);
+		}
+		$("#page-title-container").show();
+		closePageTitlesTimer = setTimeout(hidePageTitles, HIDE_NAVIGATION_MS);
 	}
-	$("#page-title-container").show();
-	closePageTitlesTimer = setTimeout(hidePageTitles, HIDE_NAVIGATION_MS);
 }
 
 function getPageTitle(pageNr) {
@@ -247,14 +256,22 @@ function hidePageTitles() {
 
 function getSlidesPerView() {
 	let newSlidesPerView;
-	if (usingMobileDevice()) {
-		if (isPortrait()) {
-			newSlidesPerView = 1;
-		} else {
-			newSlidesPerView = 2;
-		}
-	} else {
-		newSlidesPerView = preferences.slidesPerView;
+	console.log("Screen orientation type: " + screen.orientation.type);
+	switch (screen.orientation.type) {
+	  case "landscape-primary":
+	    newSlidesPerView = 2;
+	    break;
+	  case "landscape-secondary":
+		newSlidesPerView = 2;
+	    break;
+	  case "portrait-secondary":
+		newSlidesPerView = 1;
+		break;
+	  case "portrait-primary":
+		newSlidesPerView = 1;
+	    break;
+	  default:
+		newSlidesPerView = 2;
 	}
 	return newSlidesPerView;
 }
@@ -886,6 +903,7 @@ function handleKey(key) {
 }
 
 function handleChangeSlidesPerView(newSlidesPerView) {
+	//alert("handleChangeSlidesPerView " + newSlidesPerView);
 	slidesPerView = newSlidesPerView;
 	let preferences = {};
 	preferences.slidesPerView = newSlidesPerView;
@@ -976,6 +994,7 @@ function pageIndex(page, pages) {
 }
 
 function refreshOrientation() {
+	alert("refreshOrientation");
 	let orientation = getScreenOrientation();
 	if (orientation === 'portrait') {
 		slidesArray = slidesPortrait;
@@ -1137,14 +1156,6 @@ function closeFullscreen() {
 	} else if (document.msExitFullscreen) { /* IE11 */
 		document.msExitFullscreen();
 	}
-}
-
-function usingMobileDevice() {
-	const userAgent = navigator.userAgent.toLowerCase();
-	let isMobile = /iPhone|Android/i.test(navigator.userAgent);
-	let isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/.test(userAgent);
-	//console.log(userAgent + " isMobile: " + isMobile + "isTablet:" +  isTablet);
-	return isTablet || isMobile;
 }
 
 function addLeadingZero(i) {
