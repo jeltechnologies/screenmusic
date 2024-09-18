@@ -79,7 +79,7 @@ function initSwiper() {
 	console.log("currentSlide:" + currentSlide);
 	swiper = new Swiper('#swiper', {
 		slidesPerView: slidesPerView,
-		slidesPerGroup: slidesPerView,
+		//slidesPerGroup: slidesPerView,
 		initialSlide: currentSlide,
 		spaceBetween: 0,
 		centeredSlides: false,
@@ -96,8 +96,7 @@ function initSwiper() {
 
 		zoom: {
 			toggle: true
-		}
-
+		},
 	});
 
 	swiper.on('slideChangeTransitionStart', function() {
@@ -937,7 +936,8 @@ function nextSinglePage() {
 }
 
 function previousSinglePage() {
-	swiper.slidePrev();
+	let newIndex = swiper.realIndex - 1;
+	swiper.slideTo(newIndex);
 }
 
 function nextPage() {
