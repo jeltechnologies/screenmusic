@@ -125,18 +125,17 @@ public class LibraryBookServlet extends BaseServlet {
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	LOGGER.info("doDelete");
-	String body = getBody(request);
-	ObjectMapper mapper = new ObjectMapper();
-	LibraryDeleteOperation operation = mapper.readValue(body, LibraryDeleteOperation.class);
-	if (operation == null) {
+	String relativeFileName = request.getParameter("file");
+	LOGGER.info("Delete " + relativeFileName);
+	if (relativeFileName == null) {
 	    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	} else {
 	    Library library = new Library(getUser(request), new ScreenMusicContext(request));
-	    Book book = library.getBookByFileName(operation.getFile());
+	    Book book = library.getBookByFileName(relativeFileName);
 	    if (book == null) {
 		response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 	    } else {
-		library.deleteFile(operation.getFile());
+		library.deleteFile(relativeFileName);
 		invalidateCache(request);
 	    }
 	}

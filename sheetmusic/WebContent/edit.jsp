@@ -391,9 +391,9 @@ function deleteClicked() {
 }
 
 function doDeleteFile() {
-	let deleteData = {};
-	deleteData.file = "<%=fileName%>";
-	deleteJson("library/book", deleteData, deleteCompleted);
+	let fileEncoded = encodeURIComponent("<%=fileName%>");
+	let url = "library/book?file=" + fileEncoded;
+	deleteJson(url, deleteCompleted);
 }
 
 function deleteCompleted() {

@@ -62,15 +62,15 @@ public class ConfigurationLoader {
 
     private void createFolderIfNotExists(String folderName) {
 	Path folder = Path.of(folderName);
-	LOGGER.info(folderName + " is directory: " + Files.isDirectory(folder));
+	LOGGER.trace(folderName + " is directory: " + Files.isDirectory(folder));
 	if (!Files.isDirectory(folder)) {
 	    try {
 		Files.createDirectories(folder);
+		LOGGER.info("Created folder " + folder.toString());
 	    } catch (IOException e) {
 		throw new IllegalArgumentException("Cannot create folder " + folderName);
 	    }
 	}
-	LOGGER.info("Created folder " + folder.toString());
     }
 
 }
