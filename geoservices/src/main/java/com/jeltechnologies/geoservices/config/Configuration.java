@@ -1,12 +1,16 @@
 package com.jeltechnologies.geoservices.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record Configuration(
 	String dataFolder,
 	Boolean useDatabase,
 	int threadPool,
 	Boolean searchAllHouses,
 	Boolean refreshOpenStreetDataCSV,
-	CacheConfiguraton cache) {
+	CacheConfiguraton cache,
+	@JsonProperty("limit-countries-with-addresses")
+	String limitCountriesWithAddresses) {
 
     public Configuration {
 	if (dataFolder == null) {

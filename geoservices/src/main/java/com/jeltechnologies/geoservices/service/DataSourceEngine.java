@@ -41,9 +41,11 @@ import jakarta.servlet.ServletContext;
 
 public class DataSourceEngine implements DataSourceEngineMBean {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataSourceEngine.class);
+    
+    private final String HOUSES_FILE_EXTENSION = "-houses.tsv";
 
     private final Configuration configuration;
-    
+
     private final ExecutorService executor;
 
     private final GeoLocationCache locationCache;
@@ -59,13 +61,13 @@ public class DataSourceEngine implements DataSourceEngineMBean {
     private Map<Country, HouseLocationFilter> houses = new HashMap<Country, HouseLocationFilter>();
 
     private AtomicBoolean readyForService = new AtomicBoolean(false);
-    
+
     private long handledRequests;
-    
+
     private LocalDateTime lastRequest;
-    
+
     private String lastAddress;
-    
+
     public DataSourceEngine(ServletContext context, Configuration configuration) throws IOException {
 	JMXUtils.getInstance().registerMBean("engine", "Address", this);
 	this.configuration = configuration;
@@ -111,8 +113,7 @@ public class DataSourceEngine implements DataSourceEngineMBean {
 	if (this.locationCache != null) {
 	    try {
 		location = this.locationCache.fetch(coordinates);
-	    }
-	    catch (Exception e) {
+	    } catch (Exception e) {
 		LOGGER.trace("Cache size problem, fetch a new instance instead");
 	    }
 	}
@@ -167,7 +168,7 @@ public class DataSourceEngine implements DataSourceEngineMBean {
 	FileInputStream in = new FileInputStream(file);
 	return in;
     }
-    
+
     private InputStream getStreamFromResource(String name) throws IOException {
 	return DataSourceEngine.class.getResourceAsStream("/" + name);
     }
@@ -175,11 +176,11 @@ public class DataSourceEngine implements DataSourceEngineMBean {
     private List<LocationFilter> init(HouseDataSourceFactory houseDataSourceFactory) throws SQLException, IOException, InterruptedException {
 	countries = new CountryMap(getStreamFromResource("countrycodes.json"));
 	List<LocationFilter> datasources = new ArrayList<LocationFilter>();
-	
+
 	// Download at https://public.opendatasoft.com/explore/dataset/geonames-all-cities-with-a-population-1000/table/?disjunctive.cou_name_en&sort=name
 	cities = new CityLocationFilter(getStreamFromFile("geonames-all-cities-with-a-population-1000.csv"), countries);
 	datasources.add(cities);
-	
+
 	// Download at https://public.opendatasoft.com/explore/dataset/geonames-postal-code/export/
 	postalCodes = new PostalCodesLocationFilter(getStreamFromFile("geonames-postal-code.csv"), countries);
 	datasources.add(postalCodes);
@@ -192,19 +193,35 @@ public class DataSourceEngine implements DataSourceEngineMBean {
 
     private void addOpenStreetSources(HouseDataSourceFactory houseDataSourceFactory) throws SQLException, IOException, InterruptedException {
 	File dataFolder = new File(configuration.dataFolder());
-	File[] streetFiles = dataFolder.listFiles(new FilenameFilter() {
-	    @Override
-	    public boolean accept(File dir, String name) {
-		return name.endsWith("-houses.tsv");
-	    }
-	});
 	List<Future<HouseLocationFilter>> futureFetchers = new ArrayList<Future<HouseLocationFilter>>();
-	for (File file : streetFiles) {
-	    String countryCode = file.getName().substring(0, 2);
-	    Country country = countries.getCountry(countryCode);
-	    Future<HouseLocationFilter> future = executor.submit(new HouseDataSourceFetcher(country, countries, file, houseDataSourceFactory));
-	    futureFetchers.add(future);
+
+	String limitedCountries = configuration.limitCountriesWithAddresses();
+
+	if (limitedCountries != null) {
+	    List<String> countryCodes = new ArrayList<String>();
+	    String[] parts = limitedCountries.split(",");
+	    for (String part : parts) {
+		countryCodes.add(part.trim().toUpperCase());
+	    }
+	    for (String countryCode : countryCodes) {
+		File file = new File(dataFolder, countryCode + HOUSES_FILE_EXTENSION);
+		Future<HouseLocationFilter> future = getFutureThatExtractsAddress(houseDataSourceFactory, file, countryCode);
+		futureFetchers.add(future);
+	    }
+	} else {
+	    File[] streetFiles = dataFolder.listFiles(new FilenameFilter() {
+		@Override
+		public boolean accept(File dir, String name) {
+		    return name.endsWith(HOUSES_FILE_EXTENSION);
+		}
+	    });
+	    for (File file : streetFiles) {
+		String countryCode = file.getName().substring(0, 2).toUpperCase();
+		Future<HouseLocationFilter> future = getFutureThatExtractsAddress(houseDataSourceFactory, file, countryCode);
+		futureFetchers.add(future);
+	    }
 	}
+
 	for (Future<HouseLocationFilter> fetcher : futureFetchers) {
 	    try {
 		HouseLocationFilter datasource = fetcher.get();
@@ -216,6 +233,12 @@ public class DataSourceEngine implements DataSourceEngineMBean {
 	LOGGER.info("All house locations added");
     }
 
+    private Future<HouseLocationFilter> getFutureThatExtractsAddress(HouseDataSourceFactory houseDataSourceFactory, File file, String countryCode) {
+	Country country = countries.getCountry(countryCode);
+	Future<HouseLocationFilter> future = executor.submit(new HouseDataSourceFetcher(country, countries, file, houseDataSourceFactory));
+	return future;
+    }
+
     @Override
     public int getNrOfCities() {
 	return cities.size();
@@ -224,7 +247,7 @@ public class DataSourceEngine implements DataSourceEngineMBean {
     @Override
     public int getNrOfHouses() {
 	int total = 0;
-	for (Country c: houses.keySet()) {
+	for (Country c : houses.keySet()) {
 	    total = total + houses.get(c).size();
 	}
 	return total;
