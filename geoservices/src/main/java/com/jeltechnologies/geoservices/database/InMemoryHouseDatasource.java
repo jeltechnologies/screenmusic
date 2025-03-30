@@ -89,4 +89,8 @@ public class InMemoryHouseDatasource implements HouseDataSource {
     public void commit() {
     }
 
+    @Override
+    public void rollback() {
+    }
+
 }

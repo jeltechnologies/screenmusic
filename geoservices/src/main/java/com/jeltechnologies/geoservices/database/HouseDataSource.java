@@ -14,6 +14,8 @@ public interface HouseDataSource {
     void close();
 
     void commit();
+    
+    void rollback();
 
     void initDatabase(boolean dropTables) throws SQLException;
 

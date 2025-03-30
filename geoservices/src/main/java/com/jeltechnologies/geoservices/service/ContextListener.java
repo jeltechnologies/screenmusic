@@ -24,6 +24,7 @@ public class ContextListener implements ServletContextListener {
 	    factory.init(config);
 	    datasource = factory.get();
 	    datasource.initDatabase(config.refreshOpenStreetDataCSV());
+	    datasource.commit();
 	    new DataSourceEngine(servletContextEvent.getServletContext(), config);
 	    LOGGER.info("Service deployed");
 	} catch (Exception e) {

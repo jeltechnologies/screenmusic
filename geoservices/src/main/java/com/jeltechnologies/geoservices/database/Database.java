@@ -4,10 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
@@ -28,9 +27,7 @@ public class Database implements HouseDataSource {
     private final static String JNDI_DATASOURCE_NAME = "java:/comp/env/jdbc/geoservices";
 
     private Connection connection;
-
-    private Map<String, PreparedStatement> usedPreparedStatements = new HashMap<String, PreparedStatement>();
-
+    
     protected Database() {
 	try {
 	    InitialContext cxt = new InitialContext();
@@ -45,30 +42,13 @@ public class Database implements HouseDataSource {
 	}
     }
 
-    private PreparedStatement getStatement(String sql) throws SQLException {
-	if (LOGGER.isTraceEnabled()) {
-	    LOGGER.trace("getStatement sql: " + sql);
-	}
-	PreparedStatement statement = this.usedPreparedStatements.get(sql);
-	if (statement == null) {
-	    statement = connection.prepareStatement(sql);
-	    this.usedPreparedStatements.put(sql, statement);
-	}
-	statement.clearParameters();
-	return statement;
-    }
-
     @Override
     public void close() {
-	for (String sql : usedPreparedStatements.keySet()) {
-	    DBUtils.close(usedPreparedStatements.get(sql));
-	}
-	commit();
 	if (connection != null) {
 	    try {
 		connection.close();
 	    } catch (SQLException e) {
-		LOGGER.warn("Error while closing database connection", e);
+		LOGGER.error("Error while closing database connection", e);
 	    }
 	}
     }
@@ -80,16 +60,60 @@ public class Database implements HouseDataSource {
 		connection.commit();
 	    }
 	} catch (SQLException e) {
-	    LOGGER.warn("Cannot commit transaction", e);
+	    LOGGER.error("Cannot commit transaction", e);
+	}
+    }
+
+    public void rollback() {
+	try {
+	    if (connection != null) {
+		connection.rollback();
+	    }
+	} catch (SQLException e) {
+	    LOGGER.error("Cannot rollback transaction", e);
+	}
+    }
+
+    private PreparedStatement getStatement(String sql) throws SQLException {
+	if (LOGGER.isTraceEnabled()) {
+	    LOGGER.trace("getStatement sql: " + sql);
+	}
+	PreparedStatement statement = connection.prepareStatement(sql);
+	statement.clearParameters();
+	return statement;
+    }
+
+    private void close(Statement statement) {
+	try {
+	    if (statement != null) {
+		statement.close();
+	    }
+	} catch (SQLException e) {
+	    LOGGER.warn("Cannot commit statement", e);
+	}
+    }
+
+    private void close(ResultSet resultSet) {
+	try {
+	    if (resultSet != null) {
+		resultSet.close();
+	    }
+	} catch (SQLException e) {
+	    LOGGER.warn("Cannot commit resultset", e);
 	}
     }
 
     private void executeSQL(String sql) throws SQLException {
-	PreparedStatement statement = getStatement(sql);
-	if (LOGGER.isTraceEnabled()) {
-	    LOGGER.trace(sql);
+	PreparedStatement statement = null;
+	try {
+	    statement = getStatement(sql);
+	    if (LOGGER.isInfoEnabled()) {
+		LOGGER.info(sql);
+	    }
+	    statement.execute();
+	} finally {
+	    close(statement);
 	}
-	statement.execute();
     }
 
     @Override
@@ -147,22 +171,28 @@ public class Database implements HouseDataSource {
 
     @Override
     public void insertFile(String fileName, Country country) throws SQLException {
-	String sql = "INSERT INTO files(filename, countrycode, countryname) VALUES (?,?,?)";
-	PreparedStatement st = getStatement(sql);
-	st.setString(1, fileName);
-	st.setString(2, country.code());
-	st.setString(3, country.name());
-	st.executeUpdate();
+	PreparedStatement st = null;
+	try {
+	    String sql = "INSERT INTO files(filename, countrycode, countryname) VALUES (?,?,?)";
+	    st = getStatement(sql);
+	    st.setString(1, fileName);
+	    st.setString(2, country.code());
+	    st.setString(3, country.name());
+	    st.executeUpdate();
+	} finally {
+	    close(st);
+	}
     }
 
     @Override
     public GeoFile getFile(String fileName) throws SQLException {
-	String sql = "SELECT id, countrycode, countryname FROM files WHERE filename=?";
-	PreparedStatement st = getStatement(sql);
-	st.setString(1, fileName);
+	PreparedStatement st = null;
 	ResultSet rs = null;
-	GeoFile file = null;
 	try {
+	    String sql = "SELECT id, countrycode, countryname FROM files WHERE filename=?";
+	    st = getStatement(sql);
+	    st.setString(1, fileName);
+	    GeoFile file = null;
 	    rs = st.executeQuery();
 	    if (rs.next()) {
 		int id = rs.getInt(1);
@@ -172,54 +202,55 @@ public class Database implements HouseDataSource {
 	    }
 	    return file;
 	} finally {
-	    if (rs != null) {
-		rs.close();
-	    }
+	    close(rs);
+	    close(st);
 	}
     }
 
     @Override
     public void insertHouse(int fileId, Coordinates coordinates, String postalCode, String city, String street, String houseNumber, String countryCode)
 	    throws SQLException {
-	String sql = "INSERT INTO houses(files_id, latitude, longitude, postal_code,city,street,house_number,countrycode) VALUES (?,?,?,?,?,?,?,?) RETURNING id";
-	PreparedStatement st = getStatement(sql);
-
-//	files_id, 
-	st.setInt(1, fileId);
-//	latitude, 
-	st.setDouble(2, coordinates.latitude());
-//	longitude, 
-	st.setDouble(3, coordinates.longitude());
-//	postal_code,
-	st.setString(4, postalCode);
-//	city,
-	st.setString(5, city);
-//	street,
-	st.setString(6, street);
-//	house_number,
-	st.setString(7, houseNumber);
-//	country
-	st.setString(8, countryCode);
-
+	PreparedStatement st = null;
 	ResultSet rs = null;
 	try {
+
+	    String sql = "INSERT INTO houses(files_id, latitude, longitude, postal_code,city,street,house_number,countrycode) VALUES (?,?,?,?,?,?,?,?) RETURNING id";
+	    st = getStatement(sql);
+
+//	files_id, 
+	    st.setInt(1, fileId);
+//	latitude, 
+	    st.setDouble(2, coordinates.latitude());
+//	longitude, 
+	    st.setDouble(3, coordinates.longitude());
+//	postal_code,
+	    st.setString(4, postalCode);
+//	city,
+	    st.setString(5, city);
+//	street,
+	    st.setString(6, street);
+//	house_number,
+	    st.setString(7, houseNumber);
+//	country
+	    st.setString(8, countryCode);
+
 	    rs = st.executeQuery();
 	    rs.next();
 	} finally {
-	    if (rs != null) {
-		rs.close();
-	    }
+	    close(rs);
+	    close(st);
 	}
     }
 
     @Override
     public List<Location> getCoordinates(Country country) throws SQLException, InterruptedException {
-	String sql = "SELECT id, latitude, longitude FROM houses WHERE files_id = (SELECT id FROM files WHERE countrycode = ?)";
-	PreparedStatement st = getStatement(sql);
-	st.setString(1, country.code());
+	PreparedStatement st = null;
 	ResultSet rs = null;
-	List<Location> result = new ArrayList<Location>();
 	try {
+	    String sql = "SELECT id, latitude, longitude FROM houses WHERE files_id = (SELECT id FROM files WHERE countrycode = ?)";
+	    st = getStatement(sql);
+	    st.setString(1, country.code());
+	    List<Location> result = new ArrayList<Location>();
 	    rs = st.executeQuery();
 	    while (rs.next()) {
 		if (Thread.interrupted()) {
@@ -233,21 +264,21 @@ public class Database implements HouseDataSource {
 	    }
 	    return result;
 	} finally {
-	    if (rs != null) {
-		rs.close();
-	    }
+	    close(rs);
+	    close(st);
 	}
 
     }
 
     @Override
     public GeoHouse getGeoHouse(int id) throws SQLException {
-	String sql = "SELECT id, files_id, latitude, longitude, postal_code, city, street, house_number, countrycode FROM houses WHERE id=?";
-	PreparedStatement st = getStatement(sql);
-	st.setInt(1, id);
+	PreparedStatement st = null;
 	ResultSet rs = null;
-	GeoHouse result = null;
 	try {
+	    String sql = "SELECT id, files_id, latitude, longitude, postal_code, city, street, house_number, countrycode FROM houses WHERE id=?";
+	    st = getStatement(sql);
+	    st.setInt(1, id);
+	    GeoHouse result = null;
 	    rs = st.executeQuery();
 	    if (rs.next()) {
 		Coordinates c = new Coordinates(rs.getDouble(3), rs.getDouble(4));
@@ -255,9 +286,8 @@ public class Database implements HouseDataSource {
 	    }
 	    return result;
 	} finally {
-	    if (rs != null) {
-		rs.close();
-	    }
+	    close(rs);
+	    close(st);
 	}
     }
 

@@ -43,6 +43,7 @@ public class HouseLocationFilter extends AbstractLocationFilter {
 	try {
 	    database = houseDataSourceFactory.get();
 	    super.locations = database.getCoordinates(country);
+	    database.commit();
 	} finally {
 	    if (database != null) {
 		database.close();
@@ -56,10 +57,12 @@ public class HouseLocationFilter extends AbstractLocationFilter {
 	try {
 	    database = houseDataSourceFactory.get();
 	    house = database.getGeoHouse(id);
+	    database.commit();
 	} catch (SQLException e) {
 	    LOGGER.warn("Cannot get house because of " + e.getMessage());
 	} finally {
 	    if (database != null) {
+		database.commit();
 		database.close();
 	    }
 	}

@@ -47,6 +47,9 @@ public class HouseDataSourceFetcher implements Callable<HouseLocationFilter> {
 	    datasource = new HouseLocationFilter(country, countries, datasourceFactory);
 	    LOGGER.info("  Finished loading " + StringUtils.formatNumber(datasource.size()) + " addresses in " + country.name());
 	    return datasource;
+	} catch (Exception e) {
+	    db.rollback();
+	    throw e;
 	} finally {
 	    if (db != null) {
 		db.close();
